@@ -1,0 +1,138 @@
+﻿@page "/Examen2"
+@using bapptres.Data
+@inject NavigationManager NavigationManager
+
+<h3>Almacenamiento de Productos</h3>
+
+@if (!MostrarExistencias)
+{
+    <div>
+        <button class="btn btn-primary mb-3" @onclick="MostrarResumenExistencias">Existencias</button>
+    </div>
+
+    <EditForm Model="_producto" OnValidSubmit="GuardarProducto" FormName="frmProducto">
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+            <label>Número de Inventario</label>
+            <InputNumber @bind-Value="_producto.NumeroInventario" class="form-control" />
+            <ValidationMessage For="@(() => _producto.NumeroInventario)" />
+        </div>
+
+        <div class="mb-3">
+            <label>Nombre del Producto</label>
+            <InputText @bind-Value="_producto.Nombre" class="form-control" />
+            <ValidationMessage For="@(() => _producto.Nombre)" />
+        </div>
+
+        <div class="row mb-3">
+            <label class="form-label col-2">Departamento</label>
+            <div class="col-10">
+                <InputRadioGroup @bind-Value="_producto.Departamento">
+                    <InputRadio Value=@("Fruta") />Fruta
+                    <InputRadio Value=@("Verdura") />Verdura
+                    <InputRadio Value=@("Lácteos") />Lácteos
+                </InputRadioGroup>
+                <ValidationMessage For="@(() => _producto.Departamento)" />
+            </div>
+        </div>
+
+        @if (NumeroInventarioRepetido)
+        {
+            <div class="alert alert-danger" role="alert">
+                El número de inventario ya está registrado.
+            </div>
+        }
+
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    </EditForm>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Número de Inventario</th>
+                <th>Nombre</th>
+                <th>Departamento</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var producto in Productos)
+            {
+                <tr>
+                    <td>@producto.NumeroInventario</td>
+                    <td>@producto.Nombre</td>
+                    <td>@producto.Departamento</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => EliminarProducto(producto)">Eliminar</button>
+                        <button class="btn btn-primary" @onclick="() => EditarProducto(producto)">Editar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <button class="btn btn-primary mb-3" @onclick="MostrarResumenExistencias">Listado</button>
+    <h4>Existencias por Departamento</h4>
+    <p>Frutas: @Productos.Count(p => p.Departamento == "Fruta")</p>
+    <p>Verduras: @Productos.Count(p => p.Departamento == "Verdura")</p>
+    <p>Lácteos: @Productos.Count(p => p.Departamento == "Lácteos")</p>
+}
+
+@code {
+    private List<Producto> Productos = new List<Producto>();
+    private Producto _producto = new Producto();
+    private bool NumeroInventarioRepetido = false;
+    private bool MostrarExistencias = false;
+
+    private void GuardarProducto()
+    {
+        // Validar que el número de inventario no esté duplicado
+        if (!Productos.Any(p => p.NumeroInventario == _producto.NumeroInventario))
+        {
+            // Validar que el nombre del producto no esté vacío
+            if (!string.IsNullOrEmpty(_producto.Nombre))
+            {
+                // Agregar el nuevo producto a la lista
+                Productos.Add(new Producto
+                    {
+                        NumeroInventario = _producto.NumeroInventario,
+                        Nombre = _producto.Nombre,
+                        Departamento = _producto.Departamento
+                    });
+
+                // Limpiar el formulario después de guardar
+                _producto = new Producto();
+                NumeroInventarioRepetido = false; // Reiniciar flag de inventario repetido
+            }
+            else
+            {
+                // Mostrar mensaje de error si el nombre del producto está vacío
+                Console.WriteLine("Error: El nombre del producto no puede estar vacío.");
+            }
+        }
+        else
+        {
+            // Mostrar mensaje de error si el número de inventario está duplicado
+            Console.WriteLine("Error: El número de inventario ya está registrado.");
+            NumeroInventarioRepetido = true;
+        }
+    }
+
+    private void EliminarProducto(Producto producto)
+    {
+        Productos.Remove(producto);
+    }
+
+    private void EditarProducto(Producto producto)
+    {
+        _producto = producto;
+    }
+
+    private void MostrarResumenExistencias()
+    {
+        MostrarExistencias = !MostrarExistencias;
+    }
+}
